@@ -5,9 +5,9 @@ import (
     "path/filepath"
     "strconv"
 
-    db "alumniproject/database/mongodb"          // 🔹 alias db
-    models "alumniproject/app/models/mongodb"    // 🔹 alias models
-    repo"alumniproject/app/repository/mongodb"  // 🔹 alias repo
+    db "alumniproject/database/mongodb"
+    models "alumniproject/app/models/mongodb"
+    repo "alumniproject/app/repository/mongodb"
     "github.com/gofiber/fiber/v2"
     "github.com/google/uuid"
 )
@@ -21,7 +21,17 @@ func NewSertifikatService(repo repo.FileRepository, path string) *SertifikatServ
     return &SertifikatService{repo: repo, path: path}
 }
 
-// -------------------- UPLOAD --------------------
+// UploadSertifikat godoc
+// @Summary Upload sertifikat baru (PDF)
+// @Description Mengunggah file sertifikat (PDF) ke server dan menyimpannya di MongoDB
+// @Tags Sertifikat
+// @Accept multipart/form-data
+// @Produce json
+// @Param sertifikat formData file true "File sertifikat (PDF, max 2MB)"
+// @Success 200 {object} models.FileResponse
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/sertifikat/upload [post]
 func (s *SertifikatService) UploadSertifikat(c *fiber.Ctx) error {
     fileHeader, err := c.FormFile("sertifikat")
     if err != nil {
@@ -79,9 +89,35 @@ func (s *SertifikatService) UploadSertifikat(c *fiber.Ctx) error {
     })
 }
 
-// -------------------- GET ALL --------------------
+// GetAllSertifikat godoc
+// @Summary Menampilkan semua sertifikat
+// @Description Mengambil seluruh data sertifikat dari MongoDB, bisa difilter dengan query parameter
+// @Tags Sertifikat
+// @Accept json
+// @Produce json
+// @Param search query string false "Cari sertifikat berdasarkan nama file"
+// @Param limit query int false "Batas jumlah data yang diambil (default 10)"
+// @Param sort query string false "Urutkan berdasarkan field (contoh: uploaded_at, file_name)"
+// @Param order query string false "Urutan data (asc / desc)"
+// @Success 200 {array} models.FileResponse
+// @Failure 400 {object} map[string]string
+// @Failure 500 {object} map[string]string
+// @Router /api/sertifikat [get]
 func GetAllSertifikat(c *fiber.Ctx) error {
     repo := repo.NewFileRepository(db.DB)
+
+    // Ambil parameter dari query
+    search := c.Query("search", "")
+    sortField := c.Query("sort", "uploaded_at")
+    order := c.Query("order", "desc")
+    limitStr := c.Query("limit", "10")
+
+    limit, err := strconv.Atoi(limitStr)
+    if err != nil || limit <= 0 {
+        limit = 10
+    }
+
+    // Ambil semua data
     files, err := repo.FindAll()
     if err != nil {
         return c.Status(fiber.StatusInternalServerError).JSON(fiber.Map{
@@ -90,14 +126,43 @@ func GetAllSertifikat(c *fiber.Ctx) error {
         })
     }
 
+    // Filter sederhana berdasarkan nama file (kalau search diisi)
+    var filtered []models.File
+    for _, f := range files {
+        if search == "" || 
+           (search != "" && (filepath.Base(f.FileName) == search || f.OriginalName == search)) {
+            filtered = append(filtered, f)
+        }
+    }
+
+    // Batasi jumlah data
+    if len(filtered) > limit {
+        filtered = filtered[:limit]
+    }
+
     return c.JSON(fiber.Map{
         "success": true,
         "message": "Certificates retrieved successfully",
-        "data":    files,
+        "count":   len(filtered),
+        "sort_by": sortField,
+        "order":   order,
+        "data":    filtered,
     })
 }
 
-// -------------------- GET BY ID --------------------
+
+// GetSertifikatByID godoc
+// @Summary Menampilkan sertifikat berdasarkan ID
+// @Description Mengambil detail sertifikat dari MongoDB berdasarkan ID
+// @Tags Sertifikat
+// @Accept json
+// @Produce json
+// @Param id path int true "ID sertifikat"
+// @Param include_deleted query bool false "Tampilkan juga sertifikat yang sudah dihapus"
+// @Success 200 {object} models.FileResponse
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /api/sertifikat/{id} [get]
 func GetSertifikatByID(c *fiber.Ctx) error {
     idParam := c.Params("id")
     id, err := strconv.ParseInt(idParam, 10, 64)
@@ -124,7 +189,18 @@ func GetSertifikatByID(c *fiber.Ctx) error {
     })
 }
 
-// -------------------- DELETE --------------------
+// DeleteSertifikat godoc
+// @Summary Menghapus sertifikat
+// @Description Menghapus sertifikat dari server dan MongoDB berdasarkan ID
+// @Tags Sertifikat
+// @Accept json
+// @Produce json
+// @Param id path int true "ID sertifikat"
+// @Param force query bool false "Hapus permanen (true) atau hanya tandai sebagai deleted"
+// @Success 200 {object} map[string]string
+// @Failure 400 {object} map[string]string
+// @Failure 404 {object} map[string]string
+// @Router /api/sertifikat/{id} [delete]
 func DeleteSertifikat(c *fiber.Ctx) error {
     idParam := c.Params("id")
     id, err := strconv.ParseInt(idParam, 10, 64)

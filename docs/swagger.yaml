@@ -1,0 +1,994 @@
+basePath: /api/v1
+definitions:
+  alumniproject_app_models_mongodb.AlumniPekerjaan:
+    properties:
+      angkatan:
+        type: integer
+      bidang_industri:
+        type: string
+      gaji_range:
+        type: string
+      id:
+        type: string
+      jurusan:
+        type: string
+      nama:
+        type: string
+      nama_perusahaan:
+        type: string
+      posisi_jabatan:
+        type: string
+      status_pekerjaan:
+        type: string
+      tanggal_mulai_kerja:
+        type: string
+      total_bekerja_lebih_1_tahun:
+        type: integer
+    type: object
+  alumniproject_app_models_mongodb.GetTrashPekerjaan:
+    properties:
+      _id:
+        type: string
+      alumni_id:
+        type: integer
+      bidang_industri:
+        type: string
+      created_by:
+        type: integer
+      deleted_at:
+        type: string
+      lokasi_kerja:
+        type: string
+      nama_perusahaan:
+        type: string
+      posisi_jabatan:
+        type: string
+      status_pekerjaan:
+        type: string
+    type: object
+  alumniproject_app_models_mongodb.LoginRequest:
+    properties:
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  alumniproject_app_models_mongodb.LoginResponse:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/alumniproject_app_models_mongodb.User'
+    type: object
+  alumniproject_app_models_mongodb.MetaInfo:
+    properties:
+      limit:
+        type: integer
+      order:
+        type: string
+      page:
+        type: integer
+      pages:
+        type: integer
+      search:
+        type: string
+      sortBy:
+        type: string
+      total:
+        type: integer
+    type: object
+  alumniproject_app_models_mongodb.Pekerjaan:
+    properties:
+      _id:
+        type: string
+      alumni_id:
+        type: integer
+      bidang_industri:
+        type: string
+      created_at:
+        type: string
+      created_by:
+        type: integer
+      deleted_at:
+        type: string
+      deskripsi_pekerjaan:
+        type: string
+      gaji_range:
+        type: string
+      lokasi_kerja:
+        type: string
+      nama_perusahaan:
+        type: string
+      posisi_jabatan:
+        type: string
+      status_pekerjaan:
+        type: string
+      tanggal_mulai_kerja:
+        type: string
+      tanggal_selesai_kerja:
+        type: string
+      updated_at:
+        type: string
+    type: object
+  alumniproject_app_models_mongodb.PekerjaanResponse:
+    properties:
+      data:
+        description: gunakan pointer slice
+        items:
+          $ref: '#/definitions/alumniproject_app_models_mongodb.Pekerjaan'
+        type: array
+      meta:
+        $ref: '#/definitions/alumniproject_app_models_mongodb.MetaInfo'
+    type: object
+  alumniproject_app_models_mongodb.UpdatePekerjaanRequest:
+    properties:
+      bidang_industri:
+        type: string
+      deskripsi_pekerjaan:
+        type: string
+      gaji_range:
+        type: string
+      lokasi_kerja:
+        type: string
+      nama_perusahaan:
+        type: string
+      posisi_jabatan:
+        type: string
+      status_pekerjaan:
+        type: string
+      tanggal_mulai_kerja:
+        type: string
+      tanggal_selesai_kerja:
+        type: string
+    type: object
+  alumniproject_app_models_mongodb.User:
+    properties:
+      email:
+        type: string
+      id:
+        type: integer
+      password:
+        type: string
+      role:
+        type: string
+      username:
+        type: string
+    type: object
+  models.FileResponse:
+    properties:
+      file_name:
+        type: string
+      file_path:
+        type: string
+      file_size:
+        type: integer
+      file_type:
+        type: string
+      id:
+        type: integer
+      original_name:
+        type: string
+      uploaded_at:
+        type: string
+    type: object
+host: localhost:3000
+info:
+  contact: {}
+  description: API untuk mengelola data alumni dan pekerjaan menggunakan MongoDB
+  title: Alumni API (MongoDB)
+  version: "1.0"
+paths:
+  /api/foto:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil seluruh data foto yang tersimpan di MongoDB dengan opsi
+        filter, search, pagination, dan sorting
+      parameters:
+      - description: Cari berdasarkan nama file atau nama asli foto
+        in: query
+        name: search
+        type: string
+      - description: 'Nomor halaman (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Jumlah data per halaman (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Kolom untuk sorting (default: uploaded_at)'
+        in: query
+        name: sort_by
+        type: string
+      - description: Urutan sort (asc/desc)
+        in: query
+        name: order
+        type: string
+      - description: 'Filter berdasarkan tipe file (contoh: image/jpeg, image/png)'
+        in: query
+        name: file_type
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.FileResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Menampilkan semua foto
+      tags:
+      - Foto
+  /api/foto/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Menghapus file foto dari server dan database berdasarkan ID
+      parameters:
+      - description: ID foto
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Hapus permanen (true) atau soft delete (false)
+        in: query
+        name: permanent
+        type: boolean
+      - description: Alasan penghapusan foto (opsional)
+        in: query
+        name: reason
+        type: string
+      - description: ID admin yang menghapus (opsional)
+        in: query
+        name: admin_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Menghapus foto
+      tags:
+      - Foto
+    get:
+      consumes:
+      - application/json
+      description: Mengambil detail satu foto berdasarkan ID dan bisa menentukan format
+        respon
+      parameters:
+      - description: ID foto
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Tampilkan metadata tambahan (true/false)
+        in: query
+        name: include_metadata
+        type: boolean
+      - description: 'Mode tampilan (contoh: thumbnail/full)'
+        in: query
+        name: view_mode
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.FileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Menampilkan foto berdasarkan ID
+      tags:
+      - Foto
+  /api/foto/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Mengunggah file foto ke server dan menyimpannya di MongoDB
+      parameters:
+      - description: File foto (jpeg/jpg/png, max 1MB)
+        in: formData
+        name: foto
+        required: true
+        type: file
+      - description: 'Kategori foto (contoh: profil, dokumen, event)'
+        in: formData
+        name: kategori
+        type: string
+      - description: Deskripsi singkat foto
+        in: formData
+        name: deskripsi
+        type: string
+      - description: ID pengguna yang mengunggah (opsional)
+        in: formData
+        name: uploader_id
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.FileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upload foto baru
+      tags:
+      - Foto
+  /api/login:
+    post:
+      consumes:
+      - application/json
+      description: Melakukan autentikasi user berdasarkan username/email dan password,
+        lalu mengembalikan token JWT
+      parameters:
+      - description: 'Bahasa respon (contoh: id atau en)'
+        in: query
+        name: lang
+        type: string
+      - description: Login dengan mode remember (persistent)
+        in: query
+        name: remember
+        type: boolean
+      - description: Data login user
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/alumniproject_app_models_mongodb.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/alumniproject_app_models_mongodb.LoginResponse'
+        "400":
+          description: Request body tidak valid atau kosong
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "401":
+          description: Username atau password salah
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Gagal generate token
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Login user
+      tags:
+      - Auth
+  /api/pekerjaan:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil semua data pekerjaan dari MongoDB (dapat difilter dan
+        diurutkan)
+      parameters:
+      - description: Cari berdasarkan nama perusahaan atau posisi
+        in: query
+        name: search
+        type: string
+      - description: 'Urutkan berdasarkan kolom (contoh: nama_perusahaan, tanggal_mulai_kerja)'
+        in: query
+        name: sort_by
+        type: string
+      - description: Urutan data (asc/desc)
+        in: query
+        name: order
+        type: string
+      - description: 'Jumlah maksimum data (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/alumniproject_app_models_mongodb.Pekerjaan'
+            type: array
+      summary: Menampilkan semua data pekerjaan
+      tags:
+      - Pekerjaan
+  /api/pekerjaan/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Menghapus pekerjaan dengan menandainya sebagai terhapus. Bisa diatur
+        mode penghapusan dengan parameter query.
+      parameters:
+      - description: ID pekerjaan
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Hapus permanen (true) atau soft delete (false)
+        in: query
+        name: permanent
+        type: boolean
+      - description: Alasan penghapusan (opsional)
+        in: query
+        name: reason
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Hapus data pekerjaan (soft delete)
+      tags:
+      - Pekerjaan
+    get:
+      consumes:
+      - application/json
+      description: Mengambil satu data pekerjaan berdasarkan ID dari MongoDB
+      parameters:
+      - description: ID pekerjaan
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Tampilkan juga jika pekerjaan sudah dihapus (soft delete)
+        in: query
+        name: include_deleted
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/alumniproject_app_models_mongodb.Pekerjaan'
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Menampilkan detail pekerjaan berdasarkan ID
+      tags:
+      - Pekerjaan
+    put:
+      consumes:
+      - application/json
+      description: Mengubah data pekerjaan berdasarkan ID
+      parameters:
+      - description: ID pekerjaan
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Kirim notifikasi ke alumni (true/false)
+        in: query
+        name: notify
+        type: boolean
+      - description: Data pekerjaan yang akan diupdate
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/alumniproject_app_models_mongodb.UpdatePekerjaanRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Update data pekerjaan
+      tags:
+      - Pekerjaan
+  /api/pekerjaan/{id}/hard:
+    delete:
+      consumes:
+      - application/json
+      description: Menghapus data pekerjaan secara permanen dari database. Gunakan
+        dengan hati-hati!
+      parameters:
+      - description: ID pekerjaan
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Konfirmasi hapus permanen (true untuk melanjutkan)
+        in: query
+        name: confirm
+        required: true
+        type: boolean
+      - description: Alasan admin menghapus data ini (opsional)
+        in: query
+        name: admin_reason
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Hapus permanen data pekerjaan
+      tags:
+      - Pekerjaan
+  /api/pekerjaan/{id}/restore:
+    post:
+      consumes:
+      - application/json
+      description: Mengembalikan data pekerjaan yang sebelumnya dihapus (soft delete)
+      parameters:
+      - description: ID pekerjaan
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Kirim notifikasi ke user terkait (true/false)
+        in: query
+        name: notify
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Restore data pekerjaan
+      tags:
+      - Pekerjaan
+  /api/pekerjaan/alumni-pekerjaan:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil daftar alumni dan pekerjaan mereka (khusus admin). Dapat
+        difilter dan diurutkan menggunakan parameter query.
+      parameters:
+      - description: Cari alumni berdasarkan nama atau perusahaan
+        in: query
+        name: search
+        type: string
+      - description: 'Nomor halaman (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Jumlah data per halaman (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Kolom untuk sorting (contoh: nama, perusahaan)'
+        in: query
+        name: sort_by
+        type: string
+      - description: Urutan data (asc/desc)
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/alumniproject_app_models_mongodb.AlumniPekerjaan'
+            type: array
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Menampilkan semua alumni beserta pekerjaan
+      tags:
+      - Pekerjaan
+  /api/pekerjaan/alumni/{alumni_id}:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil semua pekerjaan berdasarkan ID alumni (khusus admin).
+        Dapat difilter dan diurutkan dengan query parameter.
+      parameters:
+      - description: ID Alumni
+        in: path
+        name: alumni_id
+        required: true
+        type: integer
+      - description: Cari berdasarkan nama perusahaan atau posisi jabatan
+        in: query
+        name: search
+        type: string
+      - description: 'Urutkan berdasarkan kolom (contoh: nama_perusahaan, tanggal_mulai_kerja)'
+        in: query
+        name: sort_by
+        type: string
+      - description: Urutan data (asc/desc)
+        in: query
+        name: order
+        type: string
+      - description: 'Nomor halaman (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Jumlah data per halaman (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/alumniproject_app_models_mongodb.Pekerjaan'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "403":
+          description: Forbidden
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Menampilkan pekerjaan berdasarkan Alumni ID
+      tags:
+      - Pekerjaan
+  /api/pekerjaan/paginated:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil data pekerjaan dengan pagination, sorting, dan search
+      parameters:
+      - description: 'Nomor halaman (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Jumlah data per halaman (default: 5)'
+        in: query
+        name: limit
+        type: integer
+      - description: 'Kolom untuk sorting (default: created_at)'
+        in: query
+        name: sort_by
+        type: string
+      - description: 'Urutan sort asc/desc (default: desc)'
+        in: query
+        name: order
+        type: string
+      - description: Kata kunci pencarian
+        in: query
+        name: search
+        type: string
+      - description: Tampilkan hanya pekerjaan aktif
+        in: query
+        name: only_active
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/alumniproject_app_models_mongodb.PekerjaanResponse'
+      summary: Menampilkan data pekerjaan dengan pagination
+      tags:
+      - Pekerjaan
+  /api/pekerjaan/trash:
+    get:
+      consumes:
+      - application/json
+      description: Menampilkan semua data pekerjaan yang sudah dihapus secara soft
+        delete. Dapat difilter dengan parameter query.
+      parameters:
+      - description: 'Nomor halaman (default: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Jumlah data per halaman (default: 10)'
+        in: query
+        name: limit
+        type: integer
+      - description: Kata kunci pencarian (nama perusahaan / posisi)
+        in: query
+        name: search
+        type: string
+      - description: Urutan data (asc/desc)
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/alumniproject_app_models_mongodb.GetTrashPekerjaan'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Menampilkan daftar pekerjaan yang dihapus (trash)
+      tags:
+      - Pekerjaan
+  /api/sertifikat:
+    get:
+      consumes:
+      - application/json
+      description: Mengambil seluruh data sertifikat dari MongoDB, bisa difilter dengan
+        query parameter
+      parameters:
+      - description: Cari sertifikat berdasarkan nama file
+        in: query
+        name: search
+        type: string
+      - description: Batas jumlah data yang diambil (default 10)
+        in: query
+        name: limit
+        type: integer
+      - description: 'Urutkan berdasarkan field (contoh: uploaded_at, file_name)'
+        in: query
+        name: sort
+        type: string
+      - description: Urutan data (asc / desc)
+        in: query
+        name: order
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/models.FileResponse'
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Menampilkan semua sertifikat
+      tags:
+      - Sertifikat
+  /api/sertifikat/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Menghapus sertifikat dari server dan MongoDB berdasarkan ID
+      parameters:
+      - description: ID sertifikat
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Hapus permanen (true) atau hanya tandai sebagai deleted
+        in: query
+        name: force
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Menghapus sertifikat
+      tags:
+      - Sertifikat
+    get:
+      consumes:
+      - application/json
+      description: Mengambil detail sertifikat dari MongoDB berdasarkan ID
+      parameters:
+      - description: ID sertifikat
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Tampilkan juga sertifikat yang sudah dihapus
+        in: query
+        name: include_deleted
+        type: boolean
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.FileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Menampilkan sertifikat berdasarkan ID
+      tags:
+      - Sertifikat
+  /api/sertifikat/upload:
+    post:
+      consumes:
+      - multipart/form-data
+      description: Mengunggah file sertifikat (PDF) ke server dan menyimpannya di
+        MongoDB
+      parameters:
+      - description: File sertifikat (PDF, max 2MB)
+        in: formData
+        name: sertifikat
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.FileResponse'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Upload sertifikat baru (PDF)
+      tags:
+      - Sertifikat
+schemes:
+- http
+swagger: "2.0"

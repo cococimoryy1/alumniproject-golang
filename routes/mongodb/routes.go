@@ -39,7 +39,7 @@ func SetupMongoRoutes(app *fiber.App) {
     fotoRepo := repo.NewFotoRepository(db.DB)
     sertifikatRepo := repo.NewFileRepository(db.DB)
 
-    fotoService := service.NewFotoService(fotoRepo, "/uploads/foto")
+    fotoService := service.NewFotoService(fotoRepo, "./uploads/foto")
     sertifikatService := service.NewSertifikatService(sertifikatRepo, "./uploads/sertifikat")
 
     foto := api.Group("/foto", middleware.AuthRequired())
